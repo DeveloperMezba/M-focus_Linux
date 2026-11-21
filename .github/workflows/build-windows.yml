@@ -1,0 +1,55 @@
+name: Build Windows exe
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Python 3.9 is the newest Python whose programs still run on Windows 8.1.
+      # The same .exe also runs on Windows 10 and 11.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          architecture: x64
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyQt5==5.15.11 pyinstaller
+
+      - name: Build FocusGuard.exe
+        run: >
+          pyinstaller --noconfirm --clean --onefile --windowed
+          --name FocusGuard
+          --icon focusguard.ico
+          --add-data "focusguard.ico;."
+          main.py
+
+      - name: Smoke test (starts the UI once, then quits)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist\FocusGuard.exe" -ArgumentList "--selftest","selftest.txt" -Wait -PassThru
+          if (Test-Path selftest.txt) { Get-Content selftest.txt }
+          if ($p.ExitCode -ne 0) { throw "Self-test failed (exit code $($p.ExitCode))" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FocusGuard-Windows
+          path: dist/FocusGuard.exe
+
+      - name: Attach to release (only when you push a tag like v1.0)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/FocusGuard.exe
