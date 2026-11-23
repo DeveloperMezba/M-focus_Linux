@@ -1,29 +1,30 @@
-# FocusGuard for Windows
+# M Focus
 
-Focus timer with an analog dial + website blocking. Same look and features as the Linux version.
-Works on Windows 8.1, 10 and 11 (64-bit).
+Focus timer + website/app blocker for Linux (Debian / Cinnamon, PyQt6).
 
-## Get the .exe from GitHub
-1. Upload this whole folder (including the hidden `.github` folder) to a GitHub repository.
-2. Open the **Actions** tab -> **Build Windows exe** -> wait ~3-5 minutes for the green tick
-   (or press **Run workflow**).
-3. Open the finished run -> **Artifacts** -> download **FocusGuard-Windows** -> unzip -> `FocusGuard.exe`.
-   (Tip: push a tag like `v1.0` and the exe is also attached under **Releases**.)
+## Install / update
+    sudo apt install python3-pyqt6 python3-pyqt6.qtmultimedia pkexec
+    ./install.sh          # run as your normal user; run it again to update
+Then search "M Focus" in the menu.
+
+## Remove
+    ./uninstall.sh
 
 ## Using it
-Double-click `FocusGuard.exe`. Pick the minutes on the dial, press **Start focus session**,
-and click **Yes** on the Windows permission (UAC) prompt. Sites are blocked until the timer ends,
-even if the app is closed or the PC is restarted.
+- Focus: drag the ring (or scroll / arrow keys) to pick minutes, one click per minute.
+  Single = one session. Pomodoro = rounds of focus with breaks (sites open during breaks).
+- Blocklist: category switches, your own sites, and apps to close (use the process name).
+- Insights: today, 7 days, streak, calendar heatmap, hours of the day, top labels.
+- Settings: Dark/Light themes, daily goal, sound, notifications, "allow ending early".
 
 ## How it works
-- The block is written to `C:\Windows\System32\drivers\etc\hosts` and re-applied every 2 seconds
-  by a background task (Task Scheduler, runs as SYSTEM) until the session ends.
-- Session data: `C:\ProgramData\FocusGuard`. Your site lists: `%APPDATA%\FocusGuard\config.json`.
+A small root service (mfocus.service) edits /etc/hosts and closes listed apps only
+while a focus phase runs, so it still works if the window is closed. Closing the window
+during a session keeps M Focus in the tray. Only time the service actually observed is
+credited to your history.
 
 ## Notes
-- Windows Defender / SmartScreen may warn about an unsigned exe or a hosts-file change. Choose
-  "More info" -> "Run anyway", or allow it in Defender.
-- Windows 8.1 needs the normal Windows Updates installed (Universal C Runtime).
-- Firefox with "DNS over HTTPS" turned on can ignore the hosts file; turn that off in Firefox settings.
-- To remove everything: delete `C:\Program Files\FocusGuard`, `C:\ProgramData\FocusGuard`, and run
-  `schtasks /Delete /TN FocusGuardEnforcer /F` in an admin Command Prompt.
+- Starting a session may not ask for a password (polkit rule). Ending early always does.
+- Browsers using DNS-over-HTTPS can bypass /etc/hosts: turn "secure DNS" off in the browser.
+- It does not touch the old FocusGuard. If both are installed, disable the old service:
+  sudo systemctl disable --now focusguard

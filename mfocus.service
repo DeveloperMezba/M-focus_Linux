@@ -1,0 +1,12 @@
+[Unit]
+Description=M Focus enforcer
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/lib/mfocus/enforcer.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
